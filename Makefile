@@ -1,4 +1,4 @@
-export cmd=scan
+export cmd=scan.py
 
 # Create user environment.
 install:
