@@ -647,6 +647,26 @@ def get_random_string(size: int = 7) -> str:
     return a.hex()
 
 
+def get_full_parent(p: Path) -> str:
+    '''
+    Return the full path of parent of this file or folder.
+
+    Parameters
+    ----------
+    p : Path
+        The path in question
+
+    Returns
+    -------
+    str
+        the full path  or ''
+    '''
+    try:
+        return str(os.path.dirname(p))
+    except:
+        return ''
+
+
 def get_parent(p: Path) -> str:
     '''
     Return the immediate parent of this file.

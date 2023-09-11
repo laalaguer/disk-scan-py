@@ -180,11 +180,12 @@ def renamedirs(dir, force, old_, new_, json_):
 @click.option('--force', is_flag=True, default=False, help='Perform real actions. (NOT dry run)')
 @click.option('--regex', 'regex_', required=False, type=str, default=None, help='Regex to match the source file names')
 @click.option('--only-media', 'only_media', is_flag=True, show_default=True, default=False, help='Filter only common media files')
+@click.option('--universal', is_flag=True, show_default=True, default=False, help='False then normalize each folder separately, True use unified sequence.')
 @click.option('--separator', 'separator_', required=False, type=str, default='_', show_default=True, help='Separator for final file name')
 @click.option('--prefix', 'prefix_', required=False, type=str, default='', help='Prefix for final file name')
 @click.option('--keep', 'keep_folder_name', is_flag=True, show_default=True, default=False, help='Keep folder name as part of file name')
 @click.option('--json', 'json_', type=str, default=None, help='Save the operation result in a json file')
-def normalize(dir, force, regex_, only_media, prefix_, separator_:str, keep_folder_name, json_):
+def normalize(dir, force, regex_, only_media, universal, prefix_, separator_:str, keep_folder_name, json_):
     ''' Normalize file names under a directory.
         1) Recursive (automatic goes into sub folders)
         2) Match files. User needs to either use regex to match file names or turn on only_media flag.
@@ -234,15 +235,34 @@ def normalize(dir, force, regex_, only_media, prefix_, separator_:str, keep_fold
     # Make it a list
     output = list(output)
 
-    # Order the list with path prefix
+    # Order the paths
     output = sorted(output)
 
     # Loop over the paths, decide how to rename, make a plan
     plans = [] # Plans to be executed in the future
-    for idx, each in enumerate(output):
+
+    loop_counter = 0
+    cached_parent_path = None
+
+    for each in output:
         stem_parts = []
+        _current_parent_path = utils.get_full_parent(each)
         _folder_name = utils.get_parent(each)
     
+        should_zero_out = False
+        if cached_parent_path == None:
+            should_zero_out = True
+        else:
+            if cached_parent_path != _current_parent_path:
+                should_zero_out = True
+            else:
+                should_zero_out = False
+        
+        cached_parent_path = _current_parent_path
+
+        if universal == False and should_zero_out:
+            loop_counter = 0
+
         _old_stem = each.stem
         _middle_stem = utils.get_random_string(7)
         
@@ -253,7 +273,8 @@ def normalize(dir, force, regex_, only_media, prefix_, separator_:str, keep_fold
         if keep_folder_name:
             stem_parts.append(_folder_name)
         
-        stem_parts.append(str(idx+1).zfill(digits))
+        stem_parts.append(str(loop_counter+1).zfill(digits))
+        loop_counter += 1
 
         _new_stem = utils.filter_safe_os_name(separator_.join(stem_parts).lstrip(separator_).rstrip(separator_))
         
