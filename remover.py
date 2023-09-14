@@ -30,9 +30,13 @@ def cli():
     pass
 
 @click.command()
+@click.option('--long', 'long_', is_flag=True, default=False, help='Keep the longest file name')
 @click.option('--json', 'json_', type=str, required=False, default=None, prompt='Feed me the json file that describes the duplicated files: ', help='Feed me the json file that describes the duplicated files: ')
-def automatic(json_):
-    ''' Automatic duplicate remover (Keeps the first occurance, removes the rest) '''
+def automatic(json_, long_):
+    ''' Automatic duplicate remover.
+        Keeps the first occurrence, removes the rest.
+        If '--long' flag is set, keep the longest path, removes shorter paths.
+    '''
     location = json_
 
     with open(location, 'r') as f:
@@ -57,12 +61,22 @@ def automatic(json_):
             for idx, item in enumerate(items):
                 print(f'{idx}) {item}')
             
-            # Keep the 0 position item
+            # Which one to keep? Fill in the answer
             answer = 0
+            if long_:
+                # Find out the longest path to keep
+                _top_len = 0
+                for idx, item in enumerate(items):
+                    if len(item) > _top_len:
+                        answer = idx
+                        _top_len = len(item)
+            else:
+                # Keep the 0 position item
+                answer = 0
+
+            # Make the remove
             for idx, item in enumerate(items):
-                if idx == int(answer):
-                    continue
-                else:
+                if idx != int(answer):
                     print(f'Remove: {item}')
                     utils.remove_file(Path(item), DRY_RUN)
             print('\n')
