@@ -125,8 +125,43 @@ def interactive(json_):
             print('\n')
 
 
+@click.command()
+@click.option('--json', 'json_', type=str, required=False, default=None, prompt='Feed me the json file that describes the dirs you want to remove: ', help='Feed me the json file that describes the dirs you want to remove: ')
+@click.option('--recursive', 'recursive_', is_flag=True, default=False, help='If specified, recursively remove sub folders')
+def automatic_dirs(json_, recursive_):
+    '''Automatically remove dirs.
+
+    Args:
+        json_ (str): location of a json file that describes dirs to remove. {'paths': []}
+    '''
+
+    meta_key = 'paths'
+
+    location = json_
+
+    with open(location, 'r') as f:
+        data = json.load(f)
+        data = data[meta_key]
+        print(f'Successfully loaded json file: {location}\n')
+
+        total_keys = len(data)
+        processed_keys = 0
+
+        for each_path in data:
+            # mark progress
+            processed_keys += 1
+
+            print(f'Progress: {processed_keys}/{total_keys}, Path: {each_path}')
+            
+            # Make the remove of folder (best effort)
+            try:
+                utils.remove_dir(Path(each_path), recursive=recursive_, dry_run=DRY_RUN)
+            except Exception as e:
+                print(e)
+
 cli.add_command(automatic)
 cli.add_command(interactive)
+cli.add_command(automatic_dirs)
 
 if __name__ == '__main__':
     cli()

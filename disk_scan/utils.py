@@ -107,7 +107,7 @@ def remove_dir(p: Path, recursive=False, dry_run=True) -> None:
             print(f'Remove: {p}')
         else:
             try:
-                p.unlink()
+                p.rmdir()
             except FileNotFoundError:
                 pass
 
