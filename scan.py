@@ -232,64 +232,58 @@ def normalize(dir, force, regex_, only_media, universal, prefix_, separator_:str
     total_number = len(output) # How many files needs to be renamed
     digits = len(str(total_number)) # How many digits reserved for file names
 
-    # Make it a list
+    # Make paths a list
     output = list(output)
 
-    # Order the paths
-    output = sorted(output)
-
-    # Loop over the paths, decide how to rename, make a plan
-    plans = [] # Plans to be executed in the future
-
-    loop_counter = 0
-    cached_parent_path = None
-
+    # Find out different full_parent_path(s), make files group under each full_parent_path
+    full_parent_paths = {} # key: full_parent_path, value: [list of paths fall under this path]
     for each in output:
-        stem_parts = []
-        _current_parent_path = utils.get_full_parent(each)
-        _folder_name = utils.get_parent(each)
-    
-        should_zero_out = False
-        if cached_parent_path == None:
-            should_zero_out = True
-        else:
-            if cached_parent_path != _current_parent_path:
-                should_zero_out = True
+        _full_parent = utils.get_full_parent(each)
+        if not (_full_parent in full_parent_paths): # key not in?
+            full_parent_paths[_full_parent] = [ each ]
+        else: # key is present in the dict already
+            full_parent_paths[_full_parent].append(each)
+
+    plans = [] # Plans to be executed in the future
+    loop_counter = 0
+    for key in sorted(full_parent_paths.keys()): # loop among directories
+        children_files = sorted(full_parent_paths[key])
+        # Loop over the paths, decide how to rename, make a plan, then insert into plans
+        
+        for idx, each in enumerate(children_files): # loop among files under a single directory
+            stem_parts = []
+            _folder_name = utils.get_parent(each)
+            _old_stem = each.stem
+            _middle_stem = utils.get_random_string(7)
+        
+            _old_path, _middle_path = utils.rename_stem(each, _old_stem, _middle_stem, True)
+
+            if prefix_:
+                stem_parts.append(prefix_)
+            
+            if keep_folder_name:
+                stem_parts.append(_folder_name)
+        
+            if universal:
+                stem_parts.append(str(loop_counter+1).zfill(digits))
+                loop_counter += 1
             else:
-                should_zero_out = False
+                stem_parts.append(str(idx+1).zfill(digits))
+
+            _new_stem = utils.filter_safe_os_name(separator_.join(stem_parts).lstrip(separator_).rstrip(separator_))
         
-        cached_parent_path = _current_parent_path
+            _middle_path_2, _new_path = utils.rename_stem(Path(_middle_path), _middle_stem, _new_stem, True)
 
-        if universal == False and should_zero_out:
-            loop_counter = 0
+            assert _middle_path == _middle_path_2
 
-        _old_stem = each.stem
-        _middle_stem = utils.get_random_string(7)
-        
-        _old_path, _middle_path = utils.rename_stem(each, _old_stem, _middle_stem, True)
-
-        if prefix_:
-            stem_parts.append(prefix_)
-        if keep_folder_name:
-            stem_parts.append(_folder_name)
-        
-        stem_parts.append(str(loop_counter+1).zfill(digits))
-        loop_counter += 1
-
-        _new_stem = utils.filter_safe_os_name(separator_.join(stem_parts).lstrip(separator_).rstrip(separator_))
-        
-        _middle_path_2, _new_path = utils.rename_stem(Path(_middle_path), _middle_stem, _new_stem, True)
-
-        assert _middle_path == _middle_path_2
-
-        plans.append({
-            'old_path': _old_path,
-            'middle_path': _middle_path,
-            'new_path': _new_path,
-            'old_stem': _old_stem,
-            'middle_stem': _middle_stem,
-            'new_stem': _new_stem
-        })
+            plans.append({
+                'old_path': _old_path,
+                'middle_path': _middle_path,
+                'new_path': _new_path,
+                'old_stem': _old_stem,
+                'middle_stem': _middle_stem,
+                'new_stem': _new_stem
+            })
 
     if not json_:
         click.echo('-' * 32)
