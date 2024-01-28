@@ -3,6 +3,7 @@
 from typing import Set
 from pathlib import Path
 from disk_scan import (utils, common)
+from disk_scan.img import sort_images
 import click
 import json
 
@@ -178,47 +179,46 @@ def renamedirs(dir, force, old_, new_, json_):
 @click.command()
 @click.argument('dir', type=click.Path(exists=True, dir_okay=True, resolve_path=True), required=True)
 @click.option('--force', is_flag=True, default=False, help='Perform real actions. (NOT dry run)')
-@click.option('--regex', 'regex_', required=False, type=str, default=None, help='Regex to match the source file names')
-@click.option('--only-media', 'only_media', is_flag=True, show_default=True, default=False, help='Filter only common media files')
-@click.option('--universal', is_flag=True, show_default=True, default=False, help='False then normalize each folder separately, True use unified sequence.')
+@click.option('-s', '--suffix', type=str, required=False, default=[], multiple=True, prompt="Filter only certain suffix, eg. .jpg (Press enter to ignore)", help="Filter only certain suffix, eg. .jpg")
+@click.option('--filter-image', 'filter_image', is_flag=True, show_default=True, default=False, help='Filter only image files')
+@click.option('--filter_video', 'filter_video', is_flag=True, show_default=True, default=False, help='Filter only video files')
+@click.option('--reorder-image', 'reorder_image', required=False, type=str, default=None, show_default=True, prompt='Re-order images by mode. (Press enter to ignore)', help='Re-order images by mode. eg. dHash, pHash, aHash, color, crop')
+@click.option('--universal', is_flag=True, show_default=True, default=False, help='False then normalize each folder separately, True use unified number sequence.')
 @click.option('--separator', 'separator_', required=False, type=str, default='_', show_default=True, help='Separator for final file name')
 @click.option('--prefix', 'prefix_', required=False, type=str, default='', help='Prefix for final file name')
 @click.option('--keep', 'keep_folder_name', is_flag=True, show_default=True, default=False, help='Keep folder name as part of file name')
 @click.option('--json', 'json_', type=str, default=None, help='Save the operation result in a json file')
-def normalize(dir, force, regex_, only_media, universal, prefix_, separator_:str, keep_folder_name, json_):
+def normalize(dir, force, suffix, filter_image, filter_video, reorder_image, universal, prefix_, separator_:str, keep_folder_name, json_):
     ''' Normalize file names under a directory.
         1) Recursive (automatic goes into sub folders)
-        2) Match files. User needs to either use regex to match file names or turn on only_media flag.
+        2) Match files. User needs to either use regex to match file names or turn on filter_image flag.
         3) (Optional) User can have a prefix prepended to each file.
         4) (Optional) User can keep folder name prepended to each file.
         5) File names are automatically incremental (001, 002, ...).
     '''
+    
+    if reorder_image and not filter_image:
+        click.echo('--reorder-image only works when --filter-image is present.')
+        return
 
-    if (not regex_) and (not only_media):
-        click.echo('One of --regex or --only-media shall be specified.')
-        return
-    
-    if (regex_) and (only_media):
-        click.echo('One of --regex or --only-media shall be specified.')
-        return
-    
     p = Path(str(dir))
     cache = progress(p)
     nodes = cache.get()
 
-    # only files not directories
+    # Filter: only files, not directories
     output = utils.filter_file(nodes)
 
-    # only normal files not os files or hidden files
+    # Filter: only normal files, not os files or hidden files
     output = utils.exclude_os_files(output)
     
-    # filter the correct files with regex or media
-    if regex_:
-        output = {x for x in output if utils.name_matches_str(x, regex_)}
-    elif only_media:
-        o_1 = utils.filter_by_suffixes(output, include=common.IMAGE_SUFFIX)
-        o_2 = utils.filter_by_suffixes(output, include=common.VIDEO_SUFFIX)
-        output = o_1.union(o_2)
+    # Filter: the correct files
+    if len(suffix) != 0:
+        _suffixes = [x.lower() for x in suffix]
+        output = utils.filter_by_suffixes(output, include=_suffixes)
+    elif filter_image:
+        output = utils.filter_by_suffixes(output, include=common.IMAGE_SUFFIX)
+    elif filter_video:
+        output = utils.filter_by_suffixes(output, include=common.VIDEO_SUFFIX)
     else:
         click.echo("Unknown filter operation, abort")
         return
@@ -247,7 +247,10 @@ def normalize(dir, force, regex_, only_media, universal, prefix_, separator_:str
     plans = [] # Plans to be executed in the future
     loop_counter = 0
     for key in sorted(full_parent_paths.keys()): # loop among directories
-        children_files = sorted(full_parent_paths[key])
+        if reorder_image and filter_image:
+            children_files = sort_images(full_parent_paths[key], reorder_image)
+        else:
+            children_files = utils.sort_stem_naturally(full_parent_paths[key])
         # Loop over the paths, decide how to rename, make a plan, then insert into plans
         
         for idx, each in enumerate(children_files): # loop among files under a single directory
@@ -305,6 +308,7 @@ def normalize(dir, force, regex_, only_media, universal, prefix_, separator_:str
             utils.rename_stem(Path(each['middle_path']), each['middle_stem'], each['new_stem'], False)
     else:
         click.echo("Warning: This is a dry run, use --force to perform actual rename action.")
+
 
 @click.command()
 @click.argument('dir', type=click.Path(exists=True, dir_okay=True, resolve_path=True), required=True)

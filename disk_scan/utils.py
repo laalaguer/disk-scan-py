@@ -410,7 +410,9 @@ def rename_str(p: Path, old: str, new: str, dry_run=True) -> Tuple[str, str]:
 
 
 def rename_stem(p: Path, old: str, new: str, dry_run=True) -> Tuple[str, str]:
-    ''' Change the path.stem, replace old with new '''
+    ''' Change the path.stem, replace old with new.
+        return (old_path, new_path)
+    '''
     if not stem_has_str(p, old):
         return None, None
     
@@ -688,6 +690,7 @@ def get_parent(p: Path) -> str:
     except:
         return ''
 
+
 def filter_safe_os_name(s: str) -> str:
     ''' Remove unsafe characters in string'''
     bag = []
@@ -697,3 +700,25 @@ def filter_safe_os_name(s: str) -> str:
         else:
             bag.append(c)
     return ''.join(bag)
+
+
+def atoi(text: str):
+    ''' Return int of text is int, else return text itself '''
+    return int(text) if text.isdigit() else text
+
+
+def natural_keys(text: str):
+    ''' Given a string, return a list as keys.
+        All the numbers will be turned to int.
+        Text remains
+    '''
+    return [atoi(c) for c in re.split(r'(\d+)', text)]
+
+
+def sort_stem_naturally(paths: List[Path]) -> List[Path]:
+    ''' Return the paths with natural sorting by stem name '''
+    stems = [x.stem for x in paths]
+    aparted_stems = [natural_keys(x) for x in stems]
+    to_be_sorted = list(zip(aparted_stems, paths))
+    sorted_list = sorted(to_be_sorted, key=lambda x: x[0])
+    return [x[1] for x in sorted_list]
