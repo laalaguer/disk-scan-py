@@ -126,3 +126,38 @@ def sort_images(paths: List[Path], mode:str='aHash') -> List[Path]:
     print(f'image sort time: {t3-t2}s')
     sorted_paths = [x.get_path() for x in sorted_hash_images]
     return sorted_paths
+
+
+# def _calc_distance(img_1: HashableImage, img_2: HashableImage) -> int:
+#     ''' calculate the distance between two images '''
+#     return abs(img_1.hash() - img_2.hash())
+
+# def _calc_distances(img_1: HashableImage, images: List[HashableImage]) -> List[int]:
+#     ''' Calcualte the distance of one image over all other images '''
+#     return [_calc_distance(img_1, x) for x in images]
+
+# def _print_matrix(lines):
+#     for line in lines:
+#         for column in line:
+#             print("[%4d]" % (column), end="")
+#         print()
+    
+# def sort_images_2(paths: List[Path], mode:str='aHash') -> List[Path]:
+#     ''' Sort images by a chosen mode, return the new order '''
+#     hash_computer = HashComputer(mode)
+#     t1 = time.time()
+#     hash_images = [HashableImage(x, hash_computer) for x in paths]
+#     t2 = time.time()
+#     print(f'image hash time: {t2-t1}s')
+
+#     lines = []
+#     for img in hash_images:
+#         distances = _calc_distances(img, hash_images)
+#         lines.append(distances)
+    
+#     _print_matrix(lines)
+#     # sorted_hash_images = sort_list(hash_images)
+#     # t3 = time.time()
+#     # print(f'image sort time: {t3-t2}s')
+#     # sorted_paths = [x.get_path() for x in sorted_hash_images]
+#     # return sorted_paths

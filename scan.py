@@ -181,7 +181,7 @@ def renamedirs(dir, force, old_, new_, json_):
 @click.option('--force', is_flag=True, default=False, help='Perform real actions. (NOT dry run)')
 @click.option('-s', '--suffix', type=str, required=False, default=[], multiple=True, help="Filter only certain suffix, eg. .jpg")
 @click.option('--filter-image', 'filter_image', is_flag=True, show_default=True, default=False, help='Filter only image files')
-@click.option('--filter_video', 'filter_video', is_flag=True, show_default=True, default=False, help='Filter only video files')
+@click.option('--filter-video', 'filter_video', is_flag=True, show_default=True, default=False, help='Filter only video files')
 @click.option('--reorder-image', 'reorder_image', required=False, type=str, default=None, help='Re-order images by mode. eg. dHash, pHash, aHash, color, crop')
 @click.option('--universal', is_flag=True, show_default=True, default=False, help='False then normalize each folder separately, True use unified number sequence.')
 @click.option('--separator', 'separator_', required=False, type=str, default='_', show_default=True, help='Separator for final file name')
@@ -248,7 +248,8 @@ def normalize(dir, force, suffix, filter_image, filter_video, reorder_image, uni
     loop_counter = 0
     for key in sorted(full_parent_paths.keys()): # loop among directories
         if reorder_image and filter_image:
-            children_files = sort_images(full_parent_paths[key], reorder_image)
+            children_files = utils.sort_stem_naturally(full_parent_paths[key])
+            children_files = sort_images(children_files, reorder_image)
         else:
             children_files = utils.sort_stem_naturally(full_parent_paths[key])
         # Loop over the paths, decide how to rename, make a plan, then insert into plans

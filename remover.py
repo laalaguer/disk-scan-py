@@ -51,7 +51,7 @@ def automatic(json_, long_):
             processed_keys += 1
 
             # pre-process the items of the same hash key
-            items = sorted(data[hash_key])
+            items = utils.sort_stem_naturally(data[hash_key])
             items = _exclude(items)
             items = _exists(items)
             if len(items) <= 1:
@@ -99,7 +99,7 @@ def interactive(json_):
             processed_keys += 1
 
             # pre-process the items of the same hash key
-            items = sorted(data[hash_key])
+            items = utils.sort_stem_naturally(data[hash_key])
             items = _exclude(items)
             items = _exists(items)
             if len(items) <= 1:
