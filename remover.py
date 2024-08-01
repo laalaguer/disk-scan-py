@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # An interactive remover of duplicate files.
 # Specify a '.json' file for it to start processing.
-import sys
 import json
 from pathlib import Path
 from typing import List
@@ -30,12 +29,12 @@ def cli():
     pass
 
 @click.command()
-@click.option('--long', 'long_', is_flag=True, default=False, help='Keep the longest file name')
+@click.option('--long', 'long_', is_flag=True, default=False, help='Keep the file with longest parent path')
 @click.option('--json', 'json_', type=str, required=False, default=None, prompt='Feed me the json file that describes the duplicated files: ', help='Feed me the json file that describes the duplicated files: ')
 def automatic(json_, long_):
     ''' Automatic duplicate remover.
         Keeps the first occurrence, removes the rest.
-        If '--long' flag is set, keep the longest path, removes shorter paths.
+        If '--long' flag is set, keep the longest "parent" path, removes files under shorter parent paths.
     '''
     location = json_
 
@@ -51,7 +50,7 @@ def automatic(json_, long_):
             processed_keys += 1
 
             # pre-process the items of the same hash key
-            items = utils.sort_stem_naturally(data[hash_key])
+            items = utils.sort_path_naturally(data[hash_key])
             items = _exclude(items)
             items = _exists(items)
             if len(items) <= 1:
@@ -67,9 +66,10 @@ def automatic(json_, long_):
                 # Find out the longest path to keep
                 _top_len = 0
                 for idx, item in enumerate(items):
-                    if len(item) > _top_len:
+                    parental_len = utils.get_root(item)
+                    if len(parental_len) > _top_len:
                         answer = idx
-                        _top_len = len(item)
+                        _top_len = len(parental_len)
             else:
                 # Keep the 0 position item
                 answer = 0
@@ -99,7 +99,7 @@ def interactive(json_):
             processed_keys += 1
 
             # pre-process the items of the same hash key
-            items = utils.sort_stem_naturally(data[hash_key])
+            items = utils.sort_path_naturally(data[hash_key])
             items = _exclude(items)
             items = _exists(items)
             if len(items) <= 1:

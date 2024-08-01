@@ -691,6 +691,11 @@ def get_parent(p: Path) -> str:
         return ''
 
 
+def get_root(p: Union[Path, str]) -> str:
+    ''' Get the full folder path (exlude the filename) '''
+    return str(os.path.dirname(p))
+
+
 def filter_safe_os_name(s: str) -> str:
     ''' Remove unsafe characters in string'''
     bag = []
@@ -720,5 +725,14 @@ def sort_stem_naturally(paths: List[Path]) -> List[Path]:
     stems = [x.stem for x in paths]
     aparted_stems = [natural_keys(x) for x in stems]
     to_be_sorted = list(zip(aparted_stems, paths))
+    sorted_list = sorted(to_be_sorted, key=lambda x: x[0])
+    return [x[1] for x in sorted_list]
+
+
+def sort_path_naturally(paths: List[Path]) -> List[Path]:
+    ''' Return the paths with natural sorting by whole path '''
+    str_paths = [str(x) for x in paths]
+    aparted_paths = [natural_keys(x) for x in str_paths]
+    to_be_sorted = list(zip(aparted_paths, paths))
     sorted_list = sorted(to_be_sorted, key=lambda x: x[0])
     return [x[1] for x in sorted_list]
