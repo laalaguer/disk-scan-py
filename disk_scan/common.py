@@ -18,6 +18,7 @@ VIDEO_SUFFIX = [
     '.flv',
     '.mov',
     '.mp4',
+    '.mkv',
     '.wmv',
     '.m4v',
     '.mpg',
